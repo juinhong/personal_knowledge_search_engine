@@ -21,6 +21,7 @@ func main() {
 	handler := notes.NewHandler(service)
 
 	r.Post("/notes", handler.CreateNote)
+	r.Get("/notes/search", handler.SearchNotes)
 
 	_ = http.ListenAndServe(":8080", r)
 }

@@ -18,6 +18,15 @@ const (
 	indexName = "notes"
 )
 
+type ESSearchResponse struct {
+	Hits struct {
+		Hits []struct {
+			ID     string      `json:"_id"`
+			Source models.Note `json:"_source"`
+		} `json:"hits"`
+	} `json:"hits"`
+}
+
 type ESClient struct {
 	client *elasticsearch.Client
 }
@@ -72,4 +81,37 @@ func (es *ESClient) IndexNote(ctx context.Context, note *models.Note) error {
 	}
 
 	return nil
+}
+
+func (es *ESClient) SearchNotes(query *models.SearchQuery) ([]models.Note, error) {
+	queryJson, err := json.Marshal(query)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Error marshalling query: %s", err.Error()))
+	}
+
+	resp, err := es.client.Search(
+		es.client.Search.WithIndex(indexName),
+		es.client.Search.WithBody(bytes.NewReader(queryJson)))
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Error getting response: %s", err.Error()))
+	}
+	if resp.IsError() {
+		return nil, errors.New(fmt.Sprintf("Error getting response: %s", resp.Status()))
+	}
+
+	fmt.Println(resp.String())
+
+	var esResponse *ESSearchResponse
+	err = json.NewDecoder(resp.Body).Decode(&esResponse)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Error unmarshalling response: %s", err.Error()))
+	}
+
+	notes := make([]models.Note, len(esResponse.Hits.Hits))
+	for i, hit := range esResponse.Hits.Hits {
+		note := hit.Source
+		notes[i] = note
+	}
+
+	return notes, nil
 }

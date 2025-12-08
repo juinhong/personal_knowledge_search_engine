@@ -10,6 +10,10 @@ type Handler struct {
 	service *Service
 }
 
+type SearchRequest struct {
+	Query string `json:"query"`
+}
+
 func NewHandler(service *Service) *Handler {
 	return &Handler{
 		service: service,
@@ -36,4 +40,27 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *Handler) SearchNotes(w http.ResponseWriter, r *http.Request) {
+	var req SearchRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	notes, err := h.service.SearchNotes(req.Query)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	err = json.NewEncoder(w).Encode(notes)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	return
 }

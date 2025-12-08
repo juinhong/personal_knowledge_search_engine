@@ -31,3 +31,24 @@ func (s *Service) Create(note *models.Note) error {
 
 	return nil
 }
+
+func (s *Service) SearchNotes(query string) ([]models.Note, error) {
+	if query == "" {
+		return nil, errors.New("invalid query")
+	}
+
+	searchQuery := &models.SearchQuery{
+		Query: models.MultiMatchContainer{
+			MultiMatch: models.MultiMatchQuery{
+				Query:  query,
+				Fields: []string{"title", "content"},
+			},
+		},
+	}
+	notes, err := s.es.SearchNotes(searchQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	return notes, nil
+}
