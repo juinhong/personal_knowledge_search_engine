@@ -3,9 +3,12 @@ package es
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
 	"personalKnowledgeSearchEngine/internal/models"
 
 	"github.com/elastic/go-elasticsearch/v8"
@@ -20,9 +23,21 @@ type ESClient struct {
 }
 
 func NewESClient(url string) (*ESClient, error) {
+	password := os.Getenv("ES_PASSWORD")
+	if password == "" {
+		return nil, errors.New("ES_PASSWORD environment variable not set")
+	}
+
 	cfg := elasticsearch.Config{
+		Username: "elastic",
+		Password: password,
 		Addresses: []string{
 			url,
+		},
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
 		},
 	}
 

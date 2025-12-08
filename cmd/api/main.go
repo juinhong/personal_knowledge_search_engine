@@ -13,7 +13,7 @@ func main() {
 	r := chi.NewRouter()
 
 	ctx := context.Background()
-	esClient, err := es.NewESClient("http://localhost:9200")
+	esClient, err := es.NewESClient("https://localhost:9200")
 	if err != nil {
 		panic(err)
 	}
